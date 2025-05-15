@@ -10,7 +10,7 @@ sendButton.addEventListener("click", async () => {
     const resposta = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mensagem, historico: chatHistory })
+      body: JSON.stringify({ userMessage: mensagem, history: chatHistory })
     });
 
     if (!resposta.ok) {
@@ -18,8 +18,8 @@ sendButton.addEventListener("click", async () => {
     }
 
     const data = await resposta.json();
-    chatHistory = data.historico;
-    addMensagem("Bot", data.resposta);
+    chatHistory = data.history;
+    addMensagem("Bot", data.response);
 
   } catch (erro) {
     addMensagem("Erro", "Oops! Algo deu errado. Tente novamente.");
