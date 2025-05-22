@@ -136,4 +136,13 @@ app.post('/chat', async (req, res) => {
 // Inicia servidor
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
+  if (!process.env.GEMINI_API_KEY) {
+    console.warn("ALERTA: GEMINI_API_KEY não está definida no arquivo .env! O chatbot não funcionará.");
+  }
+  if (!process.env.OPENWEATHER_API_KEY) {
+    console.warn("ALERTA: OPENWEATHER_API_KEY não está definida no arquivo .env! A função getWeather não funcionará.");
+  }
+  if (!process.env.LASTFM_API_KEY) {
+    console.warn("ALERTA: LASTFM_API_KEY não está definida no arquivo .env! A função searchSong não funcionará.");
+  }
 });
