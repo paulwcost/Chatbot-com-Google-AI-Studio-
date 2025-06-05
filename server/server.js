@@ -135,7 +135,7 @@ app.post('/chat', async (req, res) => {
 
 // Inicia servidor
 app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
+  console.log(`Servidor rodando! Use o endpoint do Render: https://chatbot-back-end-ja4v.onrender.com`);
   if (!process.env.GEMINI_API_KEY) {
     console.warn("ALERTA: GEMINI_API_KEY não está definida no arquivo .env! O chatbot não funcionará.");
   }

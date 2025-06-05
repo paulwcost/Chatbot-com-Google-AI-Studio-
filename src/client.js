@@ -7,7 +7,7 @@ sendButton.addEventListener("click", async () => {
   showBotDigitando(); // Mostrar "digitando..."
 
   try {
-    const resposta = await fetch("/chat", {
+    const resposta = await fetch("https://chatbot-back-end-ja4v.onrender.com/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userMessage: mensagem, history: chatHistory })
