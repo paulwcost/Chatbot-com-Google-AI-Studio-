@@ -1,10 +1,3 @@
-import express from 'express';
-import cors from 'cors';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import axios from 'axios';
-import { MongoClient, ServerApiVersion } from 'mongodb';
-import dotenv from 'dotenv';
-
 dotenv.config();
 const app = express();
 const port = 3000;
@@ -14,10 +7,36 @@ const port = 3000;
 app.use(cors());
 app.use(express.json());
 
+// Endpoint para buscar históricos de chat
+app.get('/api/chat/historicos', async (req, res) => {
+    if (!dbHistoria) {
+        return res.status(500).json({ error: "Servidor não conectado ao banco de dados de histórico." });
+    }
+    try {
+        const collection = dbHistoria.collection("sessoesChat");
+        const historicos = await collection.find({})
+            .sort({ startTime: -1 })
+            .limit(10)
+            .toArray();
+        res.json(historicos);
+    } catch (error) {
+        console.error("[Servidor] Erro ao buscar históricos:", error.message);
+        res.status(500).json({ error: "Erro interno ao buscar históricos de chat." });
+    }
+});
+import express from 'express';
+import cors from 'cors';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
+import { MongoClient, ServerApiVersion } from 'mongodb';
+import dotenv from 'dotenv';
+
+
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 //MONGO_URI_LOGS=mongodb+srv://user_log_acess:Log4c3ss2025@cluster0.nbt3sks.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
-//MONGO_URI_HISTORIA=mongodb+srv://fernandescostanetopaulo:12345@cluster0.c7brlef.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+//_HISTORIA=mongodb+srv://fernandescostanetopaulo:12345@cluster0.c7brlef.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 
 // Ferramentas que o Gemini pode chamar
 const tools = [
@@ -134,7 +153,7 @@ app.post('/chat', async (req, res) => {
 
   // Salvar log da interação no MongoDB
   try {
-    if (!dbLogs) await connectDB();
+    if (!dbLogs) await initializeDatabases();
     const ip = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress || null;
     const log = {
       ipAddress: ip,
@@ -190,8 +209,9 @@ app.get('/api/user-info', async (req, res) => {
 //MONGO_URI_LOGS=mongodb+srv://user_log_acess:Log4c3ss2025@cluster0.nbt3sks.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 //MONGO_URI_HISTORIA=mongodb+srv://fernandescostanetopaulo:12345@cluster0.c7brlef.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 
+
 const mongoUriLogs = "mongodb+srv://user_log_acess:Log4c3ss2025@cluster0.nbt3sks.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-const mongoUriHistoria = "mongodb+srv://fernandescostanetopaulo:12345@cluster0.c7brlef.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const mongoUriHistoria = process.env.MONGO_URI || "mongodb+srv://fernandescostanetopaulo:12345@cluster0.c7brlef.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 let dbLogs;
 let dbHistoria;
@@ -231,7 +251,7 @@ initializeDatabases();
 
 app.post('/api/log-connection', async (req, res) => {
     if (!dbLogs) { // Garante que o DB está conectado
-        await connectDB();
+        await initializeDatabases();
         if (!dbLogs) return res.status(500).json({ error: "Servidor não conectado ao banco de dados." });
     }
 
@@ -316,19 +336,20 @@ app.post('/api/chat/salvar-historico', async (req, res) => {
             messages,
             loggedAt: new Date()
         };
+        console.log('[DEBUG] Tentando salvar novaSessao:', JSON.stringify(novaSessao, null, 2));
         const collection = dbHistoria.collection("sessoesChat");
         const result = await collection.insertOne(novaSessao);
         console.log('[Servidor] Histórico de sessão salvo:', result.insertedId);
         res.status(201).json({ message: "Histórico de chat salvo com sucesso!", sessionId: novaSessao.sessionId });
     } catch (error) {
-        console.error("[Servidor] Erro em /api/chat/salvar-historico:", error.message);
-        res.status(500).json({ error: "Erro interno ao salvar histórico de chat." });
+        console.error("[Servidor] Erro em /api/chat/salvar-historico:", error);
+        res.status(500).json({ error: "Erro interno ao salvar histórico de chat.", details: error });
     }
 });
 
 // Inicia servidor
 app.listen(port, () => {
-  console.log(`Servidor rodando! Use o endpoint do Render: https://chatbot-back-end-ja4v.onrender.com`);
+  console.log("Servidor rodando! Endpoint do Render: https://chatbot-back-end-ja4v.onrender.com");
   if (!process.env.GEMINI_API_KEY) {
     console.warn("ALERTA: GEMINI_API_KEY não está definida no arquivo .env! O chatbot não funcionará.");
   }
